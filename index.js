@@ -9,11 +9,11 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 app.post('/api/claude', async (req, res) => {
   try {
-    const { messages, system, tools } = req.body;
+    const { messages, system, tools, model, max_tokens } = req.body;
 
     const body = {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
+      model: model || 'claude-sonnet-4-20250514',
+      max_tokens: max_tokens || 4000,
       messages,
     };
 
@@ -26,7 +26,7 @@ app.post('/api/claude', async (req, res) => {
         'Content-Type': 'application/json',
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'tools-2024-04-04',
+        'anthropic-beta': 'interleaved-thinking-2025-05-14',
       },
       body: JSON.stringify(body),
     });
