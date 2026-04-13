@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitrina — Tu restaurante, siempre lleno.</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1C1612;
+  --ink2: #2E2620;
+  --terra: #B85A30;
+  --terra2: #D4724E;
+  --terra-pale: #F2E6DF;
+  --gold: #C8963C;
+  --gold-pale: #FAF3E4;
+  --sage: #5A7A5E;
+  --sage-pale: #E8F0E4;
+  --cream: #F7F2EA;
+  --cream2: #EDE5D8;
+  --white: #FDFAF6;
+  --muted: #8A7E74;
+  --border: #DDD5C8;
+  --card: #FEFCF8;
+  --bad: #B83030;
+  --bad-pale: #FFF0F0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── PATRÓN GEOMÉTRICO FONDO ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(184,90,48,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184,90,48,.03) 1px, transparent 1px),
+    radial-gradient(circle at 25% 25%, rgba(200,150,60,.04) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(90,122,94,.04) 0%, transparent 50%);
+  background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; position: relative; z-index: 1; min-height: 100vh; }
+.screen.active { display: block; }
+#screen-register.active { display: grid; }
+#screen-loading.active { display: flex; }
+
+/* ── ANIMACIONES ── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px); }
+  to { opacity:1; transform:translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fillBar { from { width:0; } to { width: var(--w); } }
+@keyframes countUp { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+@keyframes drawCircle { from { stroke-dashoffset: 283; } to { stroke-dashoffset: var(--dash); } }
+
+.fade-up { animation: fadeUp .6s ease both; }
+.delay-1 { animation-delay: .1s; }
+.delay-2 { animation-delay: .2s; }
+.delay-3 { animation-delay: .3s; }
+.delay-4 { animation-delay: .4s; }
+
+/* ── HEADER OSCURO (compartido) ── */
+.page-header {
+  background: var(--ink);
+  color: white;
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+  letter-spacing: -.5px;
+}
+.logo em { color: var(--terra2); font-style: italic; }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: rgba(255,255,255,.45);
+}
+.user-badge {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
+  color: rgba(255,255,255,.6);
+}
+
+/* ── PANTALLA: REGISTRO ── */
+#screen-register {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.reg-left {
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 64px;
+  position: relative;
+  overflow: hidden;
+}
+.reg-left::before {
+  content: '';
+  position: absolute;
+  top: -100px; right: -100px;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184,90,48,.18) 0%, transparent 65%);
+}
+.reg-left::after {
+  content: '';
+  position: absolute;
+  bottom: -80px; left: -60px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,150,60,.1) 0%, transparent 65%);
+}
+.reg-badge {
+  display: inline-block;
+  background: rgba(184,90,48,.2);
+  border: 1px solid rgba(184,90,48,.3);
+  color: var(--terra2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 32px;
+  position: relative; z-index: 1;
+}
+.reg-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  font-weight: 600;
+  color: white;
+  line-height: 1.08;
+  margin-bottom: 20px;
+  position: relative; z-index: 1;
+}
+.reg-title em { color: var(--terra2); font-style: italic; }
+.reg-sub {
+  font-size: 15px;
+  color: rgba(255,255,255,.45);
+  line-height: 1.7;
+  margin-bottom: 48px;
+  font-weight: 300;
+  position: relative; z-index: 1;
+}
+.reg-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative; z-index: 1;
+}
+.reg-feat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  color: rgba(255,255,255,.55);
+}
+.reg-feat-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.07);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.reg-right {
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 64px;
+}
+.reg-form-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.reg-form-sub {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-bottom: 36px;
+}
+.form-group { margin-bottom: 20px; }
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.form-input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14.5px;
+  color: var(--ink);
+  background: white;
+  outline: none;
+  transition: all .2s;
+}
+.form-input:focus {
+  border-color: var(--terra);
+  box-shadow: 0 0 0 3px rgba(184,90,48,.08);
+}
+.form-input::placeholder { color: #C8BFB5; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.btn-primary {
+  width: 100%;
+  padding: 15px 24px;
+  background: var(--terra);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: .3px;
+  margin-top: 8px;
+}
+.btn-primary:hover { background: #A04E28; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(184,90,48,.25); }
+.btn-primary:active { transform: translateY(0); }
+.form-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+.google-btn {
+  width: 100%;
+  padding: 13px 20px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all .2s;
+  margin-bottom: 16px;
+}
+.google-btn:hover { border-color: #4285f4; background: #f8f9ff; }
+.divider-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.divider-or::before, .divider-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── PANTALLA: RESTAURANTE ── */
+#screen-restaurant {
+  min-height: 100vh;
+}
+.restaurant-hero {
+  background: var(--ink);
+  padding: 60px 40px 48px;
+  position: relative;
+  overflow: hidden;
+}
+.restaurant-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 350px; height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184,90,48,.2) 0%, transparent 65%);
+}
+.rh-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--terra2);
+  margin-bottom: 12px;
+  position: relative; z-index: 1;
+}
+.rh-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 600;
+  color: white;
+  margin-bottom: 8px;
+  position: relative; z-index: 1;
+  line-height: 1.1;
+}
+.rh-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,.42);
+  position: relative; z-index: 1;
+  font-weight: 300;
+}
+.restaurant-form {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 40px 80px;
+}
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px;
+  box-shadow: 0 4px 24px rgba(28,22,18,.05);
+}
+.form-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--terra);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.social-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--cream);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 8px;
+  user-select: none;
+}
+.social-toggle.active-ig { border-color: #E1306C; background: rgba(225,48,108,.04); }
+.social-toggle.active-tt { border-color: #333; background: rgba(0,0,0,.03); }
+.soc-icon { font-size: 18px; flex-shrink: 0; }
+.soc-info { flex: 1; }
+.soc-name { font-size: 13.5px; font-weight: 500; }
+.soc-desc { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.soc-check {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: transparent;
+  transition: all .2s; flex-shrink: 0;
+}
+.social-toggle.active-ig .soc-check { background: #E1306C; border-color: #E1306C; color: white; }
+.social-toggle.active-tt .soc-check { background: #333; border-color: #333; color: white; }
+.soc-input-wrap { display: none; margin: 0 0 10px; animation: fadeUp .2s ease; }
+.soc-input-wrap.show { display: block; }
+
+/* ── PANTALLA: LOADING ── */
+#screen-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+.loading-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.loading-logo em { color: var(--terra); font-style: italic; }
+.loading-tag {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 60px;
+}
+.loading-ring-wrap {
+  position: relative;
+  width: 72px; height: 72px;
+  margin-bottom: 28px;
+}
+.loading-ring {
+  width: 72px; height: 72px;
+  border: 2px solid var(--border);
+  border-top-color: var(--terra);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+.loading-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+  text-align: center;
+  transition: all .4s;
+}
+.loading-sub {
+  font-size: 13.5px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 360px;
+  line-height: 1.6;
+  margin-bottom: 48px;
+}
+.stage-pills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.stage-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--cream2);
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+  transition: all .4s;
+}
+.stage-pill.active {
+  background: var(--terra);
+  border-color: var(--terra);
+  color: white;
+}
+.stage-pill.done {
+  background: var(--sage-pale);
+  border-color: var(--sage);
+  color: var(--sage);
+}
+.stage-connector {
+  width: 24px; height: 1px;
+  background: var(--border);
+}
+.loading-steps {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 320px;
+  width: 100%;
+}
+.l-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--border);
+  transition: all .5s;
+}
+.l-step.active { color: var(--muted); }
+.l-step.done { color: var(--sage); }
+.l-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* ── RESULTADOS ── */
+#screen-results { min-height: 100vh; }
+.results-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 40px 100px;
+}
+
+/* HERO del restaurante */
+.resto-banner {
+  background: var(--ink);
+  border-radius: 16px;
+  padding: 32px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.resto-banner::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 250px; height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184,90,48,.2) 0%, transparent 65%);
+}
+.rb-info { position: relative; z-index: 1; }
+.rb-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--terra2);
+  margin-bottom: 8px;
+}
+.rb-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 4px;
+  line-height: 1.1;
+}
+.rb-meta { font-size: 13px; color: rgba(255,255,255,.4); }
+.rb-score { position: relative; z-index: 1; flex-shrink: 0; }
+
+/* Score gauge SVG */
+.gauge-wrap { position: relative; width: 110px; height: 110px; }
+.gauge-wrap svg { transform: rotate(-90deg); }
+.gauge-bg { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 7; }
+.gauge-fill { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1); }
+.gauge-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.gauge-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  animation: countUp .6s ease .4s both;
+}
+.gauge-lbl { font-size: 9px; color: rgba(255,255,255,.35); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+/* Progress nav etapas */
+.stage-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 32px;
+}
+.sn-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--border);
+  padding: 9px 16px 9px 0;
+}
+.sn-item.done { color: var(--sage); }
+.sn-item.active { color: var(--terra); font-weight: 600; }
+.sn-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  background: var(--border); color: white;
+  flex-shrink: 0;
+}
+.sn-item.done .sn-num { background: var(--sage); }
+.sn-item.active .sn-num { background: var(--terra); }
+.sn-connector { flex: 1; height: 1px; background: var(--border); max-width: 48px; margin: 0 4px; }
+.sn-connector.done { background: var(--sage); }
+
+/* Result cards */
+.r-section { margin-bottom: 20px; animation: fadeUp .5s ease both; }
+.r-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 2px 16px rgba(28,22,18,.04);
+}
+.r-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.r-card-icon {
+  width: 42px; height: 42px;
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; flex-shrink: 0;
+}
+.ico-terra { background: var(--terra-pale); }
+.ico-sage { background: var(--sage-pale); }
+.ico-gold { background: var(--gold-pale); }
+.ico-blue { background: #EEF2FF; }
+.ico-red { background: var(--bad-pale); }
+.r-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.r-card-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+/* Metric rows */
+.metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--cream2);
+  gap: 12px;
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-label { font-size: 13.5px; color: var(--muted); }
+.metric-val { font-size: 13.5px; font-weight: 600; color: var(--ink); text-align: right; }
+.metric-val.good { color: var(--sage); }
+.metric-val.warn { color: var(--gold); }
+.metric-val.bad { color: var(--bad); }
+
+/* Checklist */
+.checklist { display: flex; flex-direction: column; gap: 10px; }
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.check-icon {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; flex-shrink: 0; margin-top: 1px;
+}
+.check-ok { background: var(--sage-pale); color: var(--sage); }
+.check-warn { background: var(--gold-pale); color: var(--gold); }
+.check-bad { background: var(--bad-pale); color: var(--bad); }
+.check-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+/* Bar chart comparativo */
+.comp-bars { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+.comp-bar-item { }
+.comp-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.comp-bar-name { font-size: 13px; color: var(--ink); font-weight: 500; }
+.comp-bar-val { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.comp-bar-track {
+  height: 8px;
+  background: var(--cream2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.comp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  animation: fillBar .9s ease both;
+  --w: 0%;
+}
+.bar-terra { background: linear-gradient(90deg, var(--terra), var(--terra2)); }
+.bar-sage { background: linear-gradient(90deg, var(--sage), #7AAF7E); }
+.bar-gold { background: linear-gradient(90deg, var(--gold), #E0B060); }
+.bar-muted { background: var(--border); }
+
+/* Tags */
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.tag {
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.tag-terra { background: var(--terra-pale); color: var(--terra); }
+.tag-sage { background: var(--sage-pale); color: var(--sage); }
+.tag-gold { background: var(--gold-pale); color: var(--gold); }
+.tag-bad { background: var(--bad-pale); color: var(--bad); }
+
+/* Action items */
+.action-list { display: flex; flex-direction: column; gap: 14px; }
+.action-item { display: flex; gap: 14px; align-items: flex-start; }
+.action-num {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--terra); color: white;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.action-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.action-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* Competitor cards */
+.comp-list { display: flex; flex-direction: column; gap: 10px; }
+.comp-card-item {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.comp-rank {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--border);
+  min-width: 28px;
+}
+.comp-info { flex: 1; }
+.comp-name { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+.comp-detail { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.comp-strength { font-size: 12px; color: var(--sage); margin-top: 4px; }
+.comp-weak { font-size: 12px; color: var(--bad); }
+
+/* Post calendar */
+.week-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--terra);
+  margin: 20px 0 12px;
+}
+.post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.post-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 15px;
+}
+.post-day {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--terra);
+  margin-bottom: 5px;
+}
+.post-format {
+  display: inline-block;
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+.fmt-reel { background: rgba(225,48,108,.1); color: #E1306C; }
+.fmt-foto { background: var(--gold-pale); color: var(--gold); }
+.fmt-story { background: #EEF2FF; color: #4060D4; }
+.post-topic { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.post-brief { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* Proyección */
+.proy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 4px; }
+.proy-col {
+  background: var(--cream);
+  border-radius: 10px;
+  padding: 18px;
+  border: 1px solid var(--border);
+}
+.proy-col.optimista { border-color: var(--terra); background: var(--terra-pale); }
+.proy-col-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.proy-col.optimista .proy-col-label { color: var(--terra); }
+.proy-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.proy-row:last-of-type { border-bottom: none; }
+.proy-row b { color: var(--ink); }
+.proy-col.optimista .proy-row b { color: var(--terra); }
+.proy-desc { font-size: 11.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+
+/* Botón continuar */
+.continue-wrap { margin-top: 32px; text-align: center; }
+.btn-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 40px;
+  background: var(--ink);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-continue:hover { background: var(--ink2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(28,22,18,.18); }
+.btn-continue svg { transition: transform .2s; }
+.btn-continue:hover svg { transform: translateX(4px); }
+.continue-note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+/* Panel final */
+.final-panel {
+  background: var(--ink);
+  border-radius: 16px;
+  padding: 40px;
+  color: white;
+  margin-top: 12px;
+}
+.fp-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--terra2);
+  margin-bottom: 12px;
+}
+.fp-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.fp-sub { font-size: 14px; color: rgba(255,255,255,.55); line-height: 1.65; margin-bottom: 28px; }
+.fp-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-pdf {
+  padding: 13px 28px;
+  background: var(--terra);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-pdf:hover { background: #A04E28; }
+.btn-new {
+  padding: 13px 28px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  color: white;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-new:hover { background: rgba(255,255,255,.14); }
+
+/* Error */
+.error-card {
+  background: var(--bad-pale);
+  border: 1px solid rgba(184,48,48,.15);
+  border-radius: 14px;
+  padding: 32px;
+  text-align: center;
+}
+.error-icon { font-size: 36px; margin-bottom: 12px; }
+.error-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--bad);
+  margin-bottom: 8px;
+}
+.error-msg { font-size: 13.5px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+.btn-retry {
+  padding: 11px 24px;
+  background: var(--bad);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Resumen ejecutivo highlight */
+.exec-summary {
+  background: linear-gradient(135deg, var(--terra-pale), var(--gold-pale));
+  border-radius: 10px;
+  padding: 18px 20px;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.7;
+  border-left: 3px solid var(--terra);
+  margin-bottom: 20px;
+}
+
+/* Section divider */
+.sec-div {
+  display: flex; align-items: center; gap: 12px;
+  margin: 24px 0; color: var(--muted);
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;
+}
+.sec-div::before, .sec-div::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #screen-register { grid-template-columns: 1fr; }
+  .reg-left { display: none; }
+  .reg-right { padding: 60px 28px; }
+  .restaurant-form { padding: 32px 20px 60px; }
+  .form-card { padding: 24px; }
+  .form-row { grid-template-columns: 1fr; }
+  .results-container { padding: 28px 20px 80px; }
+  .proy-grid { grid-template-columns: 1fr; }
+  .post-grid { grid-template-columns: 1fr 1fr; }
+  .fp-btns { flex-direction: column; }
+  .resto-banner { flex-direction: column; align-items: flex-start; }
+  .page-header { padding: 0 20px; }
+  .resto-banner { padding: 24px; }
+  .r-card { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ REGISTRO ══ -->
+<div class="screen active" id="screen-register">
+  <div class="reg-left">
+    <div class="reg-badge fade-up">✦ Plataforma de marketing gastronómico</div>
+    <h1 class="reg-title fade-up delay-1">Tu restaurante<br>merece estar<br><em>siempre lleno.</em></h1>
+    <p class="reg-sub fade-up delay-2">El análisis de marketing que antes solo tenían las grandes cadenas. Ahora para tu restaurante, en minutos.</p>
+    <div class="reg-features fade-up delay-3">
+      <div class="reg-feat">
+        <div class="reg-feat-icon">📊</div>
+        Diagnóstico real de tu presencia digital
+      </div>
+      <div class="reg-feat">
+        <div class="reg-feat-icon">📍</div>
+        Análisis completo de Google Maps y reseñas
+      </div>
+      <div class="reg-feat">
+        <div class="reg-feat-icon">📱</div>
+        Estrategia de redes con datos reales
+      </div>
+      <div class="reg-feat">
+        <div class="reg-feat-icon">📋</div>
+        Plan de contenido de 30 días listo para usar
+      </div>
+      <div class="reg-feat">
+        <div class="reg-feat-icon">📄</div>
+        Informe profesional descargable en PDF
+      </div>
+    </div>
+  </div>
+  <div class="reg-right">
+    <h2 class="reg-form-title">Creá tu cuenta gratis</h2>
+    <p class="reg-form-sub">14 días sin costo · Sin tarjeta · Cancelás cuando querés</p>
+
+    <button class="google-btn" onclick="registroConGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z" fill="#EA4335"/></svg>
+      Continuar con Google
+    </button>
+
+    <div class="divider-or">o registrate con mail</div>
+
+    <div class="form-group">
+      <label class="form-label">Tu nombre</label>
+      <input type="text" class="form-input" id="reg-nombre" placeholder="Ej: Martín González" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="reg-email" placeholder="tu@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input type="password" class="form-input" id="reg-pass" placeholder="Mínimo 8 caracteres">
+    </div>
+    <button class="btn-primary" onclick="registrarse()">Crear cuenta →</button>
+    <p class="form-note">¿Ya tenés cuenta? <span style="color:var(--terra);cursor:pointer;" onclick="iniciarSesion()">Iniciá sesión</span></p>
+  </div>
+</div>
+
+<!-- ══ RESTAURANTE ══ -->
+<div class="screen" id="screen-restaurant">
+  <header class="page-header">
+    <div class="logo">Vitri<em>na</em></div>
+    <div class="header-right">
+      <div class="user-badge" id="user-badge">—</div>
+    </div>
+  </header>
+  <div class="restaurant-hero">
+    <div class="rh-label">✦ Tu restaurante</div>
+    <h2 class="rh-title">¿Sobre qué restaurante<br>hacemos el análisis?</h2>
+    <p class="rh-sub">Buscamos toda la información pública disponible — Google Maps, medios, Instagram, TikTok.</p>
+  </div>
+  <div class="restaurant-form">
+    <div class="form-card">
+      <div class="form-section-title">Datos del local</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre del restaurante *</label>
+          <input type="text" class="form-input" id="inp-nombre" placeholder="Ej: La Nonna Osteria">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Barrio *</label>
+          <input type="text" class="form-input" id="inp-barrio" placeholder="Ej: Palermo">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tipo de cocina *</label>
+          <input type="text" class="form-input" id="inp-tipo" placeholder="Ej: Italiana, Bodegón...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ticket promedio</label>
+          <input type="text" class="form-input" id="inp-ticket" placeholder="Ej: $15.000-$22.000">
+        </div>
+      </div>
+
+      <div class="form-section-title" style="margin-top:28px">Redes sociales</div>
+
+      <div class="social-toggle" id="tog-ig" onclick="toggleSoc('ig')">
+        <span class="soc-icon">📸</span>
+        <div class="soc-info">
+          <div class="soc-name">Instagram</div>
+          <div class="soc-desc">Análisis de engagement, contenido y crecimiento</div>
+        </div>
+        <div class="soc-check" id="ck-ig">✓</div>
+      </div>
+      <div class="soc-input-wrap" id="si-ig">
+        <input type="text" class="form-input" id="inp-ig" placeholder="@nombredelrestaurante" style="margin-bottom:8px">
+      </div>
+
+      <div class="social-toggle" id="tog-tt" onclick="toggleSoc('tt')">
+        <span class="soc-icon">🎵</span>
+        <div class="soc-info">
+          <div class="soc-name">TikTok</div>
+          <div class="soc-desc">Alcance orgánico y videos cortos</div>
+        </div>
+        <div class="soc-check" id="ck-tt">✓</div>
+      </div>
+      <div class="soc-input-wrap" id="si-tt">
+        <input type="text" class="form-input" id="inp-tt" placeholder="@nombredelrestaurante" style="margin-bottom:8px">
+      </div>
+
+      <button class="btn-primary" onclick="iniciarAnalisis()" style="margin-top:20px">
+        Analizar mi restaurante →
+      </button>
+      <p class="form-note">El análisis tarda entre 60 y 90 segundos · Gratis en esta versión</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div class="screen" id="screen-loading">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:60px 20px;">
+    <div class="loading-logo">Vitri<em>na</em></div>
+    <div class="loading-tag">Análisis en progreso</div>
+    <div class="loading-ring-wrap">
+      <div class="loading-ring"></div>
+    </div>
+    <div class="loading-title" id="load-title">Buscando información...</div>
+    <div class="loading-sub" id="load-sub">Explorando Google Maps, medios y presencia digital de tu restaurante.</div>
+    <div class="stage-pills">
+      <div class="stage-pill" id="sp-1">📍 Web</div>
+      <div class="stage-connector"></div>
+      <div class="stage-pill" id="sp-2">📱 Redes</div>
+      <div class="stage-connector"></div>
+      <div class="stage-pill" id="sp-3">🎯 Estrategia</div>
+    </div>
+    <div class="loading-steps" id="load-steps"></div>
+  </div>
+</div>
+
+<!-- ══ RESULTADOS ══ -->
+<div class="screen" id="screen-results">
+  <header class="page-header">
+    <div class="logo">Vitri<em>na</em></div>
+    <div class="header-right">
+      <div class="user-badge" id="user-badge-r">—</div>
+    </div>
+  </header>
+  <div class="results-container">
+    <div class="stage-nav" id="stage-nav">
+      <div class="sn-item pending" id="sn-1"><div class="sn-num">1</div> Presencia web</div>
+      <div class="sn-connector" id="sc-1"></div>
+      <div class="sn-item pending" id="sn-2"><div class="sn-num">2</div> Redes sociales</div>
+      <div class="sn-connector" id="sc-2"></div>
+      <div class="sn-item pending" id="sn-3"><div class="sn-num">3</div> Estrategia</div>
+    </div>
+    <div class="resto-banner" id="resto-banner">
+      <div class="rb-info">
+        <div class="rb-tag">✦ Informe Vitrina</div>
+        <div class="rb-name" id="rb-name">—</div>
+        <div class="rb-meta" id="rb-meta">—</div>
+      </div>
+      <div class="rb-score">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 100 100" width="110" height="110">
+            <circle class="gauge-bg" cx="50" cy="50" r="42"/>
+            <circle class="gauge-fill" id="gauge-fill" cx="50" cy="50" r="42" stroke="var(--terra2)" stroke-dasharray="264" stroke-dashoffset="264"/>
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-num" id="gauge-num">—</div>
+            <div class="gauge-lbl">Puntaje</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="results-content"></div>
+    <div id="continue-wrap"></div>
+  </div>
+</div>
+
+<script>
+var SERVER_URL = 'https://proud-illumination-production-ed01.up.railway.app';
+var MODEL = 'claude-sonnet-4-20250514';
+
+var usuario = {};
+var restaurante = {};
+var socActivo = { ig: false, tt: false };
+var data1 = null, data2 = null, data3 = null;
+var retryFn = null;
+
+// ── PANTALLAS ──
+function mostrar(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── REGISTRO ──
+function registroConGoogle() {
+  var n = prompt('Esta función requiere el servidor. Por ahora ingresá tu nombre:');
+  if (!n) return;
+  var e = prompt('Y tu email:');
+  if (!e) return;
+  usuario = { nombre: n, email: e };
+  document.getElementById('user-badge').textContent = n.split(' ')[0];
+  document.getElementById('user-badge-r').textContent = n.split(' ')[0];
+  mostrar('screen-restaurant');
+}
+
+function registrarse() {
+  var n = (document.getElementById('reg-nombre').value || '').trim();
+  var e = (document.getElementById('reg-email').value || '').trim();
+  var p = (document.getElementById('reg-pass').value || '');
+  if (!n) { alert('Ingresá tu nombre para continuar.'); return; }
+  if (!e) { alert('Ingresá tu email para continuar.'); return; }
+  if (p.length < 8) { alert('La contraseña debe tener al menos 8 caracteres.'); return; }
+  usuario = { nombre: n, email: e };
+  var fn = n.split(' ')[0];
+  document.getElementById('user-badge').textContent = fn;
+  document.getElementById('user-badge-r').textContent = fn;
+  mostrar('screen-restaurant');
+}
+
+function iniciarSesion() {
+  var e = document.getElementById('reg-email').value || prompt('Email:');
+  if (!e) return;
+  var n = e.split('@')[0];
+  usuario = { nombre: n, email: e };
+  document.getElementById('user-badge').textContent = n;
+  document.getElementById('user-badge-r').textContent = n;
+  mostrar('screen-restaurant');
+}
+
+// ── SOCIAL TOGGLES ──
+function toggleSoc(t) {
+  socActivo[t] = !socActivo[t];
+  var cls = { ig: 'active-ig', tt: 'active-tt' };
+  document.getElementById('tog-' + t).className = 'social-toggle' + (socActivo[t] ? ' ' + cls[t] : '');
+  document.getElementById('si-' + t).className = 'soc-input-wrap' + (socActivo[t] ? ' show' : '');
+}
+
+// ── INICIAR ANÁLISIS ──
+function iniciarAnalisis() {
+  var n = document.getElementById('inp-nombre').value.trim();
+  var b = document.getElementById('inp-barrio').value.trim();
+  var t = document.getElementById('inp-tipo').value.trim();
+  if (!n || !b || !t) { alert('Completá nombre, barrio y tipo de cocina para continuar.'); return; }
+  restaurante = {
+    nombre: n, barrio: b, tipo: t,
+    ticket: document.getElementById('inp-ticket').value.trim() || 'no especificado',
+    instagram: socActivo.ig ? (document.getElementById('inp-ig').value.trim() || 'no proporcionado') : 'no proporcionado',
+    tiktok: socActivo.tt ? (document.getElementById('inp-tt').value.trim() || 'no proporcionado') : 'no proporcionado'
+  };
+  mostrar('screen-loading');
+  configLoading(1);
+  setTimeout(etapa1, 300);
+}
+
+// ── LOADING ──
+function configLoading(etapa) {
+  var cfg = {
+    1: { title: 'Analizando presencia web y Google Maps', sub: 'Buscando reseñas, calificación, horarios, precios y menciones en medios gastronómicos...', steps: ['Buscando en Google Maps', 'Revisando reseñas y calificación', 'Buscando menciones en medios', 'Verificando horarios y precios'] },
+    2: { title: 'Analizando redes sociales', sub: 'Investigando Instagram y TikTok: seguidores, contenido, engagement y estrategia actual...', steps: ['Analizando perfil de Instagram', 'Revisando tipo de contenido', 'Evaluando engagement y frecuencia', 'Identificando oportunidades'] },
+    3: { title: 'Generando estrategia completa', sub: 'Comparando con competidores de la zona y armando tu plan de contenido personalizado...', steps: ['Analizando competidores de la zona', 'Detectando oportunidades de diferenciación', 'Armando plan de contenido 30 días', 'Calculando proyecciones a 90 días'] }
+  };
+  var c = cfg[etapa];
+  document.getElementById('load-title').textContent = c.title;
+  document.getElementById('load-sub').textContent = c.sub;
+  ['sp-1','sp-2','sp-3'].forEach(function(id, i) {
+    var el = document.getElementById(id);
+    if (i + 1 < etapa) el.className = 'stage-pill done';
+    else if (i + 1 === etapa) el.className = 'stage-pill active';
+    else el.className = 'stage-pill';
+  });
+  var stepsEl = document.getElementById('load-steps');
+  stepsEl.innerHTML = c.steps.map(function(s, i) {
+    return '<div class="l-step" id="ls' + i + '"><div class="l-dot"></div>' + s + '</div>';
+  }).join('');
+  c.steps.forEach(function(s, i) {
+    setTimeout(function() {
+      var el = document.getElementById('ls' + i);
+      if (el) {
+        el.className = 'l-step active';
+        if (i > 0) {
+          var prev = document.getElementById('ls' + (i-1));
+          if (prev) prev.className = 'l-step done';
+        }
+      }
+    }, i * 900);
+  });
+}
+
+// ── API ──
+async function llamarAPI(prompt, prompt2) {
+  prompt2 = prompt2 || prompt;
+  var response = await fetch(SERVER_URL + '/api/claude', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 4000,
+      
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    var status = response.status;
+    if (status === 401) throw new Error('Error de autenticación. Contactá al soporte.');
+    if (status === 429) throw new Error('Demasiadas solicitudes. Esperá un momento e intentá de nuevo.');
+    throw new Error('Error al conectar con el servidor (' + status + '). Intentá de nuevo.');
+  }
+
+  var data = await response.json();
+
+  // Si stop_reason es tool_use, Claude necesita continuar — hacer segunda llamada
+  if (data.stop_reason === 'tool_use') {
+    var messages2 = [
+      { role: 'user', content: prompt2 || '' },
+      { role: 'assistant', content: data.content },
+      { role: 'user', content: 'Continuá y devolvé el JSON final basándote en la búsqueda que acabás de hacer.' }
+    ];
+    var response2 = await fetch(SERVER_URL + '/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 4000,
+        
+        messages: messages2
+      })
+    });
+    if (!response2.ok) throw new Error('Error en segunda llamada (' + response2.status + ').');
+    data = await response2.json();
+  }
+
+  var texts = [];
+  if (data.content) {
+    data.content.forEach(function(block) {
+      if (block.type === 'text' && block.text && block.text.trim()) texts.push(block.text);
+    });
+  }
+  var joined = texts.join('');
+  return joined;
+}
+
+function parsearJSON(txt) {
+  if (!txt || !txt.trim()) throw new Error('La respuesta llegó vacía. Intentá de nuevo.');
+  var clean = txt.trim();
+  while (clean.charAt(0) === '`') clean = clean.substring(1);
+  if (clean.substring(0,4) === 'json') clean = clean.substring(4).trim();
+  while (clean.charAt(clean.length-1) === '`') clean = clean.substring(0, clean.length-1);
+  clean = clean.trim();
+  try { return JSON.parse(clean); } catch(e) {}
+  var s = clean.indexOf('{'), e = clean.lastIndexOf('}');
+  if (s >= 0 && e > s) { try { return JSON.parse(clean.slice(s, e+1)); } catch(e2) {} }
+  throw new Error('No pudimos procesar la respuesta. Intentá de nuevo.');
+}
+
+// ── ETAPA 1: WEB Y GOOGLE MAPS ──
+async function etapa1() {
+  var r = restaurante;
+  var prompt = 'Sos el director de la mejor agencia de marketing digital gastronómico de Argentina. Hacés investigaciones web exhaustivas y profesionales.\n\n' +
+    'RESTAURANTE A ANALIZAR:\n' +
+    '- Nombre: ' + r.nombre + '\n' +
+    '- Barrio: ' + r.barrio + ', Buenos Aires, Argentina\n' +
+    '- Tipo de cocina: ' + r.tipo + '\n' +
+    '- Ticket promedio: ' + r.ticket + '\n\n' +
+    'INSTRUCCIONES DE BÚSQUEDA — seguí este orden exacto:\n\n' +
+    '1. Buscá en Google: "' + r.nombre + ' ' + r.barrio + ' Buenos Aires" — anotá todo lo que encontrés.\n' +
+    '2. Buscá específicamente: "' + r.nombre + ' Google Maps Buenos Aires calificación reseñas" — necesitás encontrar el rating y la cantidad de opiniones.\n' +
+    '3. Buscá: "' + r.nombre + ' ' + r.barrio + ' restaurante horarios dirección teléfono" — para verificar que la info esté actualizada.\n' +
+    '4. Buscá: "' + r.nombre + ' delivery Rappi PedidosYa" — para saber si tiene presencia en plataformas de delivery.\n' +
+    '5. Buscá: "' + r.nombre + ' Buenos Aires Infobae OR Clarín OR TimeOut OR Guía Óleo OR blog gastronomía" — para menciones en medios.\n\n' +
+    'MUY IMPORTANTE SOBRE GOOGLE MAPS:\n' +
+    '- Si encontrás una calificación real (ej: 4.8, 4.5, etc.) úsala — no pongas "No verificable".\n' +
+    '- Si encontrás cantidad de reseñas real (ej: 92 opiniones) úsala.\n' +
+    '- Si encontrás que SÍ responde reseñas, poné "Sí". Si ves que no, poné "No".\n' +
+    '- Solo poné "No verificable" si después de buscar activamente no encontraste NADA.\n' +
+    '- Para los horarios: si encontrás horarios publicados en Google, ponelos. Si no encontrás, poné "No verificable".\n\n' +
+    'TONO DEL ANÁLISIS: Profesional, directo, como si fuera un informe de agencia de $500 USD. Sin frases genéricas. Todo basado en lo que realmente encontraste.\n\n' +
+    'Devolvé ÚNICAMENTE este JSON exacto (sin texto antes ni después, sin backticks, sin comentarios):\n' +
+    '{' +
+    '"puntaje_vitrina":75,' +
+    '"resumen_ejecutivo":"2-3 oraciones precisas sobre el estado digital real del restaurante basadas en lo que encontraste. Mencioná datos concretos.",' +
+    '"google_maps":{' +
+    '"calificacion":"rating real encontrado con cantidad de reseñas, ej: 4.8 ⭐ (92 reseñas). Si no encontraste nada: No verificable",' +
+    '"estado":"Bien posicionado / Posicionamiento medio / Sin presencia / No verificable",' +
+    '"responde_resenas":"Sí / No / Parcialmente / No verificable",' +
+    '"horarios_actualizados":"Sí con los horarios / No / No verificable",' +
+    '"precios_actualizados":"Acordes a la zona / Desactualizados / No especificado",' +
+    '"fotos_propias":"Tiene / No tiene / Pocas / No verificable",' +
+    '"menu_cargado":"Sí / No / No verificable",' +
+    '"detalle":"observación específica y concreta sobre Google Maps basada en lo que encontraste"},' +
+    '"presencia_web":{' +
+    '"menciones_media":"descripción real de menciones encontradas o Sin menciones encontradas",' +
+    '"directorios":"plataformas donde aparece o Sin presencia en directorios",' +
+    '"website":"Tiene sitio web / Solo redes / Sin presencia web",' +
+    '"delivery":"plataformas de delivery donde aparece o Sin delivery online"},' +
+    '"fortalezas":["fortaleza concreta 1 basada en lo encontrado","fortaleza 2","fortaleza 3"],' +
+    '"oportunidades":["oportunidad específica 1","oportunidad 2","oportunidad 3"],' +
+    '"alertas":["alerta real si la hay o null","alerta 2 o null"],' +
+    '"acciones_google":[' +
+    '{"titulo":"acción prioritaria 1 específica para este restaurante","detalle":"cómo hacerlo paso a paso"},' +
+    '{"titulo":"acción 2","detalle":"explicación"},' +
+    '{"titulo":"acción 3","detalle":"explicación"},' +
+    '{"titulo":"acción 4","detalle":"explicación"}],' +
+    '"competidores_zona":[' +
+    '{"nombre":"restaurante real o creíble de ' + r.barrio + '","tipo":"tipo similar a ' + r.tipo + '","google_rating":"rating","seguidores_ig":"número estimado","fortaleza":"qué hace bien","debilidad":"punto débil"},' +
+    '{"nombre":"segundo competidor de ' + r.barrio + '","tipo":"tipo","google_rating":"rating","seguidores_ig":"número","fortaleza":"fortaleza","debilidad":"debilidad"},' +
+    '{"nombre":"tercer competidor","tipo":"tipo","google_rating":"rating","seguidores_ig":"número","fortaleza":"fortaleza","debilidad":"debilidad"}]}';
+
+  try {
+    var txt = await llamarAPI(prompt);
+    data1 = parsearJSON(txt);
+    mostrarEtapa1();
+  } catch(e) {
+    retryFn = etapa1;
+    mostrarError(e.message);
+  }
+}
+
+function mostrarEtapa1() {
+  var d = data1, r = restaurante;
+  var score = d.puntaje_vitrina || 0;
+
+  document.getElementById('rb-name').textContent = r.nombre;
+  document.getElementById('rb-meta').textContent = r.tipo + ' · ' + r.barrio + ' · Buenos Aires';
+  document.getElementById('gauge-num').textContent = score;
+  setTimeout(function() {
+    var dashOffset = Math.round(264 - (score / 100) * 264);
+    var fill = document.getElementById('gauge-fill');
+    fill.style.strokeDashoffset = dashOffset;
+    if (score >= 70) fill.style.stroke = '#5A7A5E';
+    else if (score >= 50) fill.style.stroke = '#C8963C';
+    else fill.style.stroke = '#B83030';
+  }, 400);
+
+  setStagNav(1);
+
+  var gm = d.google_maps || {};
+  var pw = d.presencia_web || {};
+
+  var checks = [
+    [gm.responde_resenas === 'Sí', 'Responde reseñas de Google', 'No responde reseñas — cada reseña sin respuesta es una oportunidad perdida'],
+    [gm.horarios_actualizados === 'Sí', 'Horarios actualizados en Google', 'Horarios no verificados — revisá que estén correctos y completos'],
+    [gm.precios_actualizados === 'Acordes a la zona', 'Rango de precios actualizado', 'Precios por revisar — un precio desactualizado confunde y aleja clientes'],
+    [gm.fotos_propias === 'Tiene', 'Tiene fotos propias en Google', 'Sin fotos propias — los locales con fotos generan 35% más clicks'],
+    [gm.menu_cargado === 'Sí', 'Menú cargado en Google Maps', 'Sin menú en Google — el 40% de los usuarios lo consulta antes de decidir']
+  ];
+
+  var content = '';
+
+  // Resumen ejecutivo
+  content += '<div class="r-section fade-up">';
+  content += '<div class="exec-summary">' + (d.resumen_ejecutivo || '') + '</div>';
+  content += '</div>';
+
+  // Google Maps card
+  content += '<div class="r-section fade-up delay-1"><div class="r-card">';
+  content += '<div class="r-card-header"><div class="r-card-icon ico-sage">📍</div><div><div class="r-card-title">Google Maps</div><div class="r-card-sub">' + (gm.estado || '') + '</div></div></div>';
+  content += '<div class="metric-row"><span class="metric-label">Calificación</span><span class="metric-val good">' + (gm.calificacion || 'No encontrado') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Responde reseñas</span><span class="metric-val ' + (gm.responde_resenas === 'Sí' ? 'good' : 'bad') + '">' + (gm.responde_resenas || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Horarios publicados</span><span class="metric-val ' + (gm.horarios_actualizados === 'Sí' ? 'good' : 'warn') + '">' + (gm.horarios_actualizados || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Rango de precios</span><span class="metric-val ' + (gm.precios_actualizados === 'Acordes a la zona' ? 'good' : 'warn') + '">' + (gm.precios_actualizados || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Fotos propias</span><span class="metric-val ' + (gm.fotos_propias === 'Tiene' ? 'good' : 'bad') + '">' + (gm.fotos_propias || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Menú cargado</span><span class="metric-val ' + (gm.menu_cargado === 'Sí' ? 'good' : 'bad') + '">' + (gm.menu_cargado || '—') + '</span></div>';
+  if (gm.detalle) content += '<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:14px;padding-top:14px;border-top:1px solid var(--cream2)">' + gm.detalle + '</div>';
+  content += '</div></div>';
+
+  // Checklist Google Maps
+  content += '<div class="r-section fade-up delay-1"><div class="r-card">';
+  content += '<div class="r-card-header"><div class="r-card-icon ico-terra">✓</div><div><div class="r-card-title">Estado de tu perfil en Google</div><div class="r-card-sub">Qué está bien y qué hay que mejorar</div></div></div>';
+  content += '<div class="checklist">';
+  checks.forEach(function(c) {
+    var cls = c[0] ? 'check-ok' : 'check-bad';
+    var ico = c[0] ? '✓' : '✗';
+    content += '<div class="check-item"><div class="check-icon ' + cls + '">' + ico + '</div><div><div>' + (c[0] ? c[1] : c[2]) + '</div></div></div>';
+  });
+  content += '</div></div></div>';
+
+  // Presencia web
+  content += '<div class="r-section fade-up delay-2"><div class="r-card">';
+  content += '<div class="r-card-header"><div class="r-card-icon ico-blue">🌐</div><div><div class="r-card-title">Presencia en medios y directorios</div></div></div>';
+  content += '<div class="metric-row"><span class="metric-label">Menciones en medios</span><span class="metric-val">' + (pw.menciones_media || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Directorios gastronómicos</span><span class="metric-val">' + (pw.directorios || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Sitio web propio</span><span class="metric-val">' + (pw.website || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Delivery online</span><span class="metric-val">' + (pw.delivery || '—') + '</span></div>';
+  content += '</div></div>';
+
+  // Comparativa zona
+  if ((d.competidores_zona || []).length) {
+    content += '<div class="r-section fade-up delay-2"><div class="r-card">';
+    content += '<div class="r-card-header"><div class="r-card-icon ico-gold">🏆</div><div><div class="r-card-title">Competidores de tu zona</div><div class="r-card-sub">Referencia directa de mercado</div></div></div>';
+    content += '<div class="comp-bars">';
+    var allRatings = d.competidores_zona.map(function(c) { return parseFloat(c.google_rating) || 4; });
+    var maxR = Math.max.apply(null, allRatings.concat([parseFloat((d.google_maps||{}).calificacion) || 4]));
+    content += '<div class="comp-bar-item"><div class="comp-bar-header"><span class="comp-bar-name">📍 ' + r.nombre + ' (vos)</span><span class="comp-bar-val">' + (gm.calificacion || '—') + '</span></div><div class="comp-bar-track"><div class="comp-bar-fill bar-terra" style="--w:' + Math.round((parseFloat(gm.calificacion)||0)/5*100) + '%;width:' + Math.round((parseFloat(gm.calificacion)||0)/5*100) + '%"></div></div></div>';
+    var barColors = ['bar-sage', 'bar-gold', 'bar-muted'];
+    d.competidores_zona.forEach(function(c, i) {
+      var pct = Math.round((parseFloat(c.google_rating)||0)/5*100);
+      content += '<div class="comp-bar-item"><div class="comp-bar-header"><span class="comp-bar-name">' + c.nombre + '</span><span class="comp-bar-val">' + (c.google_rating || '—') + ' ⭐</span></div><div class="comp-bar-track"><div class="comp-bar-fill ' + (barColors[i]||'bar-muted') + '" style="--w:' + pct + '%;width:' + pct + '%"></div></div></div>';
+    });
+    content += '</div>';
+    content += '<div class="comp-list" style="margin-top:18px">';
+    d.competidores_zona.forEach(function(c, i) {
+      content += '<div class="comp-card-item"><div class="comp-rank">' + (i+1) + '</div><div class="comp-info"><div class="comp-name">' + c.nombre + '</div><div class="comp-detail">' + (c.tipo||'') + ' · ' + (c.seguidores_ig||'—') + ' seg. IG</div><div class="comp-strength">✓ ' + (c.fortaleza||'') + '</div><div class="comp-weak">✗ ' + (c.debilidad||'') + '</div></div></div>';
+    });
+    content += '</div></div></div>';
+  }
+
+  // Fortalezas y oportunidades
+  content += '<div class="r-section fade-up delay-3"><div class="r-card">';
+  content += '<div class="r-card-header"><div class="r-card-icon ico-sage">✅</div><div><div class="r-card-title">Fortalezas detectadas</div></div></div>';
+  content += '<div class="tag-cloud">' + (d.fortalezas||[]).map(function(f) { return '<span class="tag tag-sage">' + f + '</span>'; }).join('') + '</div>';
+  content += '<div class="sec-div">Oportunidades</div>';
+  content += '<div class="tag-cloud">' + (d.oportunidades||[]).map(function(o) { return '<span class="tag tag-gold">' + o + '</span>'; }).join('') + '</div>';
+  if ((d.alertas||[]).filter(function(a) { return a && a !== 'null'; }).length) {
+    content += '<div class="sec-div">Alertas</div>';
+    content += '<div class="tag-cloud">' + d.alertas.filter(function(a) { return a && a !== 'null'; }).map(function(a) { return '<span class="tag tag-bad">⚠ ' + a + '</span>'; }).join('') + '</div>';
+  }
+  content += '</div></div>';
+
+  // Acciones Google
+  if ((d.acciones_google||[]).length) {
+    content += '<div class="r-section fade-up delay-3"><div class="r-card">';
+    content += '<div class="r-card-header"><div class="r-card-icon ico-terra">🎯</div><div><div class="r-card-title">Plan de acción para Google Maps</div><div class="r-card-sub">Qué hacer esta semana para mejorar tu posicionamiento</div></div></div>';
+    content += '<div class="action-list">';
+    d.acciones_google.forEach(function(a, i) {
+      content += '<div class="action-item"><div class="action-num">' + (i+1) + '</div><div><div class="action-title">' + (a.titulo||'') + '</div><div class="action-body">' + (a.detalle||'') + '</div></div></div>';
+    });
+    content += '</div></div></div>';
+  }
+
+  document.getElementById('results-content').innerHTML = content;
+  document.getElementById('continue-wrap').innerHTML =
+    '<div class="continue-wrap">' +
+    '<button class="btn-continue" onclick="irEtapa2()">Continuar al análisis de redes <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' +
+    '<div class="continue-note">Etapa 2 de 3 — Instagram y TikTok</div></div>';
+
+  mostrar('screen-results');
+}
+
+// ── ETAPA 2: REDES ──
+function irEtapa2() {
+  mostrar('screen-loading');
+  configLoading(2);
+  setTimeout(etapa2, 300);
+}
+
+async function etapa2() {
+  var r = restaurante;
+  var resumen1 = data1 ? data1.resumen_ejecutivo : '';
+
+  var prompt = 'Sos el director de la mejor agencia de marketing digital gastronómico de Argentina.\n\n' +
+    'RESTAURANTE:\n- Nombre: ' + r.nombre + '\n- Barrio: ' + r.barrio + '\n- Tipo: ' + r.tipo + '\n- Instagram: ' + r.instagram + '\n- TikTok: ' + r.tiktok + '\n\n' +
+    'CONTEXTO DEL ANÁLISIS WEB YA REALIZADO:\n' + resumen1 + '\n\n' +
+    'TAREA: Investigá la presencia en redes sociales de este restaurante. Buscá en internet:\n' +
+    '1. Su perfil de Instagram real: seguidores, publicaciones, Reels, Stories, engagement visual, bio, link en bio\n' +
+    '2. Su TikTok si existe\n' +
+    '3. Qué tipo de contenido publican y con qué frecuencia\n' +
+    '4. Si responden comentarios y mensajes\n' +
+    '5. Calidad visual del contenido\n\n' +
+    'Devolvé ÚNICAMENTE este JSON (sin texto antes ni después, sin backticks):\n' +
+    '{"instagram":{"seguidores":"número real o estimado","publicaciones":"número","frecuencia":"ej: 3 veces/semana","formatos_usados":"Reels, Fotos, Stories, Highlights","usa_reels":"Sí / No / Poco","responde_comentarios":"Sí / No / A veces","tiene_link_bio":"Sí / No","etiqueta_ubicacion":"Sí / No","calidad_visual":"Alta / Media / Mejorable","engagement_estimado":"Alto / Medio / Bajo","bio_descripcion":"descripción de la bio actual","observacion":"análisis específico de 2-3 líneas"},"tiktok":{"estado":"Activo / Inactivo / Sin perfil","seguidores":"número o No encontrado","observacion":"observación o recomendación"},"puntaje_redes":70,"diagnostico_redes":"diagnóstico de 2-3 oraciones profesional","contenido":{"temas_principales":["tema 1","tema 2","tema 3"],"que_funciona":"qué tipo de contenido tiene mejor respuesta","que_falta":"qué contenido están perdiendo"},"metricas_comparativa":[{"metrica":"Seguidores Instagram","vos":"número","zona_promedio":"número estimado zona","estado":"ok/warn/bad"},{"metrica":"Frecuencia de publicación","vos":"X/semana","zona_promedio":"recomendado","estado":"ok/warn/bad"},{"metrica":"Uso de Reels","vos":"si/no","zona_promedio":"Obligatorio 2024","estado":"ok/warn/bad"},{"metrica":"Engagement rate","vos":"estimado%","zona_promedio":"promedio sector","estado":"ok/warn/bad"}],"acciones_inmediatas":[{"titulo":"acción 1","detalle":"descripción concreta"},{"titulo":"acción 2","detalle":"descripción"},{"titulo":"acción 3","detalle":"descripción"},{"titulo":"acción 4","detalle":"descripción"}]}';
+
+  try {
+    var txt = await llamarAPI(prompt);
+    data2 = parsearJSON(txt);
+    mostrarEtapa2();
+  } catch(e) {
+    retryFn = etapa2;
+    mostrarError(e.message);
+  }
+}
+
+function mostrarEtapa2() {
+  var d = data2;
+  var ig = d.instagram || {};
+  var tt = d.tiktok || {};
+
+  setStagNav(2);
+  var score = d.puntaje_redes || 0;
+  document.getElementById('gauge-num').textContent = score;
+  setTimeout(function() {
+    var dashOffset = Math.round(264 - (score / 100) * 264);
+    var fill = document.getElementById('gauge-fill');
+    fill.style.strokeDashoffset = dashOffset;
+    fill.style.stroke = score >= 70 ? '#5A7A5E' : score >= 50 ? '#C8963C' : '#B83030';
+  }, 400);
+
+  var content = '';
+
+  content += '<div class="r-section fade-up">';
+  content += '<div class="exec-summary">' + (d.diagnostico_redes || '') + '</div>';
+  content += '</div>';
+
+  // Instagram métricas
+  content += '<div class="r-section fade-up delay-1"><div class="r-card">';
+  content += '<div class="r-card-header"><div class="r-card-icon ico-terra" style="background:rgba(225,48,108,.08)">📸</div><div><div class="r-card-title">Instagram</div><div class="r-card-sub">' + (ig.bio_descripcion || '') + '</div></div></div>';
+  content += '<div class="metric-row"><span class="metric-label">Seguidores</span><span class="metric-val">' + (ig.seguidores || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Publicaciones</span><span class="metric-val">' + (ig.publicaciones || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Frecuencia</span><span class="metric-val">' + (ig.frecuencia || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Formatos usados</span><span class="metric-val">' + (ig.formatos_usados || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Calidad visual</span><span class="metric-val ' + (ig.calidad_visual === 'Alta' ? 'good' : ig.calidad_visual === 'Mejorable' ? 'bad' : 'warn') + '">' + (ig.calidad_visual || '—') + '</span></div>';
+  content += '<div class="metric-row"><span class="metric-label">Engagement estimado</span><span class="metric-val ' + (ig.engagement_estimado === 'Alto' ? 'good' : ig.engagement_estimado === 'Bajo' ? 'bad' : 'warn') + '">' + (ig.engagement_estimado || '—') + '</span></div>';
+
+  var igChecks = [
+    [ig.usa_reels === 'Sí', 'Usa Reels — el formato con mayor alcance hoy', 'No usa Reels — está perdiendo el formato de mayor alcance orgánico'],
+    [ig.responde_comentarios === 'Sí', 'Responde comentarios — genera confianza y comunidad', 'No responde comentarios — pierde engagement y visibilidad'],
+    [ig.tiene_link_bio === 'Sí', 'Tiene link en bio — facilita que el cliente te encuentre', 'Sin link en bio — los seguidores no tienen dónde ir'],
+    [ig.etiqueta_ubicacion === 'Sí', 'Etiqueta ubicación — aparece en búsquedas locales', 'Sin etiqueta de ubicación — no aparece en búsquedas del barrio']
+  ];
+  content += '<div class="checklist" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cream2)">';
+  igChecks.forEach(function(c) {
+    content += '<div class="check-item"><div class="check-icon ' + (c[0] ? 'check-ok' : 'check-bad') + '">' + (c[0] ? '✓' : '✗') + '</div><span>' + (c[0] ? c[1] : c[2]) + '</span></div>';
+  });
+  content += '</div>';
+  if (ig.observacion) content += '<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:14px;padding-top:14px;border-top:1px solid var(--cream2)">' + ig.observacion + '</div>';
+  content += '</div></div>';
+
+  // TikTok
+  content += '<div class="r-section fade-up delay-1"><div class="r-card">';
+  content += '<div class="r-card-header"><div class="r-card-icon ico-blue">🎵</div><div><div class="r-card-title">TikTok</div><div class="r-card-sub">' + (tt.estado || '') + '</div></div></div>';
+  if (tt.seguidores && tt.seguidores !== 'No encontrado') {
+    content += '<div class="metric-row"><span class="metric-label">Seguidores</span><span class="metric-val">' + tt.seguidores + '</span></div>';
+  }
+  content += '<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:10px">' + (tt.observacion || '') + '</div>';
+  content += '</div></div>';
+
+  // Comparativa métricas
+  if ((d.metricas_comparativa||[]).length) {
+    content += '<div class="r-section fade-up delay-2"><div class="r-card">';
+    content += '<div class="r-card-header"><div class="r-card-icon ico-gold">📊</div><div><div class="r-card-title">Comparativa con tu zona</div></div></div>';
+    d.metricas_comparativa.forEach(function(m) {
+      var color = m.estado === 'ok' ? 'good' : m.estado === 'bad' ? 'bad' : 'warn';
+      content += '<div class="metric-row"><span class="metric-label">' + m.metrica + '</span><div style="text-align:right"><span class="metric-val ' + color + '">' + m.vos + '</span><div style="font-size:11.5px;color:var(--muted);margin-top:2px">Zona: ' + m.zona_promedio + '</div></div></div>';
+    });
+    content += '</div></div>';
+  }
+
+  // Contenido
+  if (d.contenido) {
+    content += '<div class="r-section fade-up delay-2"><div class="r-card">';
+    content += '<div class="r-card-header"><div class="r-card-icon ico-terra">💡</div><div><div class="r-card-title">Análisis de contenido</div></div></div>';
+    content += '<div class="metric-row"><span class="metric-label">Temas principales</span><div class="tag-cloud">' + (d.contenido.temas_principales||[]).map(function(t) { return '<span class="tag tag-terra">' + t + '</span>'; }).join('') + '</div></div>';
+    content += '<div class="metric-row"><span class="metric-label">Qué funciona</span><span class="metric-val" style="font-weight:400;color:var(--sage)">' + (d.contenido.que_funciona||'—') + '</span></div>';
+    content += '<div class="metric-row" style="border:none"><span class="metric-label">Qué falta</span><span class="metric-val" style="font-weight:400;color:var(--bad)">' + (d.contenido.que_falta||'—') + '</span></div>';
+    content += '</div></div>';
+  }
+
+  // Acciones inmediatas
+  if ((d.acciones_inmediatas||[]).length) {
+    content += '<div class="r-section fade-up delay-3"><div class="r-card">';
+    content += '<div class="r-card-header"><div class="r-card-icon ico-terra">🚀</div><div><div class="r-card-title">Acciones inmediatas</div><div class="r-card-sub">Para implementar esta semana</div></div></div>';
+    content += '<div class="action-list">';
+    d.acciones_inmediatas.forEach(function(a, i) {
+      content += '<div class="action-item"><div class="action-num">' + (i+1) + '</div><div><div class="action-title">' + (a.titulo||'') + '</div><div class="action-body">' + (a.detalle||'') + '</div></div></div>';
+    });
+    content += '</div></div></div>';
+  }
+
+  document.getElementById('results-content').innerHTML = content;
+  document.getElementById('continue-wrap').innerHTML =
+    '<div class="continue-wrap"><button class="btn-continue" onclick="irEtapa3()">Continuar a la estrategia completa <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button><div class="continue-note">Etapa 3 de 3 — Comparativa, proyecciones y plan de 30 días</div></div>';
+
+  mostrar('screen-results');
+}
+
+// ── ETAPA 3: ESTRATEGIA ──
+function irEtapa3() {
+  mostrar('screen-loading');
+  configLoading(3);
+  setTimeout(etapa3, 300);
+}
+
+async function etapa3() {
+  var r = restaurante;
+  var ctx1 = data1 ? (data1.resumen_ejecutivo + ' Google: ' + (data1.google_maps||{}).calificacion) : '';
+  var ctx2 = data2 ? data2.diagnostico_redes : '';
+
+  var prompt = 'Sos el director de la mejor agencia de marketing digital gastronómico de Argentina. Generás estrategias de primer nivel.\n\n' +
+    'RESTAURANTE: ' + r.nombre + ' · ' + r.barrio + ' · ' + r.tipo + '\n' +
+    'ANÁLISIS WEB: ' + ctx1 + '\n' +
+    'ANÁLISIS REDES: ' + ctx2 + '\n\n' +
+    'Devolvé ÚNICAMENTE este JSON (sin texto antes ni después, sin backticks):\n' +
+    '{"diferenciacion":"En 3 oraciones, cómo ' + r.nombre + ' puede diferenciarse claramente de la competencia en ' + r.barrio + '","estrategia_90_dias":{"escenario_conservador":{"mes1":"objetivo mes 1","mes2":"objetivo mes 2","mes3":"objetivo mes 3","descripcion":"qué implica este escenario"},"escenario_optimista":{"mes1":"objetivo mes 1","mes2":"objetivo mes 2","mes3":"objetivo mes 3","descripcion":"qué implica este escenario"},"frecuencia_recomendada":"X posts/semana","pilares_contenido":["pilar 1","pilar 2","pilar 3","pilar 4"]},"plan_contenido":[{"semana":1,"posts":[{"dia":"Lunes","formato":"Reel","tema":"tema específico","brief":"descripción concreta del contenido a filmar y publicar"},{"dia":"Miércoles","formato":"Foto","tema":"tema","brief":"descripción"},{"dia":"Viernes","formato":"Reel","tema":"tema","brief":"descripción"},{"dia":"Domingo","formato":"Story","tema":"tema","brief":"descripción"}]},{"semana":2,"posts":[{"dia":"Martes","formato":"Reel","tema":"tema","brief":"descripción"},{"dia":"Jueves","formato":"Foto","tema":"tema","brief":"descripción"},{"dia":"Sábado","formato":"Reel","tema":"tema","brief":"descripción"}]},{"semana":3,"posts":[{"dia":"Lunes","formato":"Foto","tema":"tema","brief":"descripción"},{"dia":"Miércoles","formato":"Reel","tema":"tema","brief":"descripción"},{"dia":"Viernes","formato":"Story","tema":"tema","brief":"descripción"},{"dia":"Domingo","formato":"Reel","tema":"tema","brief":"descripción"}]},{"semana":4,"posts":[{"dia":"Martes","formato":"Reel","tema":"tema","brief":"descripción"},{"dia":"Jueves","formato":"Foto","tema":"tema","brief":"descripción"},{"dia":"Sábado","formato":"Reel","tema":"tema","brief":"descripción"}]}]}';
+
+  try {
+    var txt = await llamarAPI(prompt);
+    data3 = parsearJSON(txt);
+    mostrarEtapa3();
+  } catch(e) {
+    retryFn = etapa3;
+    mostrarError(e.message);
+  }
+}
+
+function mostrarEtapa3() {
+  var d = data3, r = restaurante;
+  setStagNav(3);
+  document.getElementById('gauge-num').textContent = '✓';
+  document.getElementById('gauge-fill').style.strokeDashoffset = '0';
+  document.getElementById('gauge-fill').style.stroke = '#5A7A5E';
+
+  var content = '';
+
+  // Diferenciación
+  if (d.diferenciacion) {
+    content += '<div class="r-section fade-up"><div class="exec-summary" style="border-left-color:var(--sage);background:linear-gradient(135deg,var(--sage-pale),var(--gold-pale))">' + d.diferenciacion + '</div></div>';
+  }
+
+  // Proyecciones
+  if (d.estrategia_90_dias) {
+    var e90 = d.estrategia_90_dias;
+    content += '<div class="r-section fade-up delay-1"><div class="r-card">';
+    content += '<div class="r-card-header"><div class="r-card-icon ico-gold">📈</div><div><div class="r-card-title">Proyección a 90 días</div><div class="r-card-sub">Frecuencia recomendada: ' + (e90.frecuencia_recomendada||'—') + '</div></div></div>';
+    content += '<div class="proy-grid">';
+    if (e90.escenario_conservador) {
+      var ec = e90.escenario_conservador;
+      content += '<div class="proy-col"><div class="proy-col-label">Escenario conservador</div>';
+      content += '<div class="proy-row"><span>Mes 1</span><b>' + (ec.mes1||'—') + '</b></div>';
+      content += '<div class="proy-row"><span>Mes 2</span><b>' + (ec.mes2||'—') + '</b></div>';
+      content += '<div class="proy-row"><span>Mes 3</span><b>' + (ec.mes3||'—') + '</b></div>';
+      content += '<div class="proy-desc">' + (ec.descripcion||'') + '</div></div>';
+    }
+    if (e90.escenario_optimista) {
+      var eo = e90.escenario_optimista;
+      content += '<div class="proy-col optimista"><div class="proy-col-label">Escenario optimista</div>';
+      content += '<div class="proy-row"><span>Mes 1</span><b>' + (eo.mes1||'—') + '</b></div>';
+      content += '<div class="proy-row"><span>Mes 2</span><b>' + (eo.mes2||'—') + '</b></div>';
+      content += '<div class="proy-row"><span>Mes 3</span><b>' + (eo.mes3||'—') + '</b></div>';
+      content += '<div class="proy-desc">' + (eo.descripcion||'') + '</div></div>';
+    }
+    content += '</div>';
+    if ((e90.pilares_contenido||[]).length) {
+      content += '<div class="sec-div">Pilares de contenido</div>';
+      content += '<div class="tag-cloud">' + e90.pilares_contenido.map(function(p) { return '<span class="tag tag-terra">' + p + '</span>'; }).join('') + '</div>';
+    }
+    content += '</div></div>';
+  }
+
+  // Plan de contenido
+  if ((d.plan_contenido||[]).length) {
+    content += '<div class="r-section fade-up delay-2"><div class="r-card">';
+    content += '<div class="r-card-header"><div class="r-card-icon ico-blue">📅</div><div><div class="r-card-title">Plan de contenido — 30 días</div><div class="r-card-sub">Briefs listos para ejecutar</div></div></div>';
+    d.plan_contenido.forEach(function(sem) {
+      content += '<div class="week-label">Semana ' + sem.semana + '</div>';
+      content += '<div class="post-grid">';
+      (sem.posts||[]).forEach(function(p) {
+        var fmtCls = p.formato === 'Reel' ? 'fmt-reel' : p.formato === 'Story' ? 'fmt-story' : 'fmt-foto';
+        content += '<div class="post-card"><div class="post-day">' + p.dia + '</div><span class="post-format ' + fmtCls + '">' + p.formato + '</span><div class="post-topic">' + (p.tema||'') + '</div><div class="post-brief">' + (p.brief||'') + '</div></div>';
+      });
+      content += '</div>';
+    });
+    content += '</div></div>';
+  }
+
+  document.getElementById('results-content').innerHTML = content;
+  document.getElementById('continue-wrap').innerHTML =
+    '<div class="final-panel">' +
+    '<div class="fp-label">✦ Análisis completo</div>' +
+    '<div class="fp-title">Tu plan está listo, ' + r.nombre + '.</div>' +
+    '<div class="fp-sub">Diagnóstico web, análisis de redes, comparativa de competidores, proyecciones a 90 días y plan de 30 días de contenido listo para ejecutar.</div>' +
+    '<div class="fp-btns"><button class="btn-pdf" onclick="descargarPDF()">📄 Descargar PDF</button><button class="btn-new" onclick="nuevoAnalisis()">Analizar otro restaurante</button></div>' +
+    '</div>';
+
+  mostrar('screen-results');
+}
+
+// ── PDF ──
+function descargarPDF() {
+  var r = restaurante;
+  var fecha = new Date().toLocaleDateString('es-AR');
+  var win = window.open('', '_blank');
+
+  var gm = (data1||{}).google_maps || {};
+  var ig = ((data2||{}).instagram) || {};
+  var hallazgos1 = ((data1||{}).fortalezas||[]).map(function(f) { return '<li>' + f + '</li>'; }).join('');
+  var ops = ((data1||{}).oportunidades||[]).map(function(o) { return '<li>' + o + '</li>'; }).join('');
+  var acciones = ((data1||{}).acciones_google||[]).map(function(a,i) { return '<p><strong>' + (i+1) + '. ' + a.titulo + '</strong><br>' + a.detalle + '</p>'; }).join('');
+  var pilares = ((data3||{}).estrategia_90_dias||{}).pilares_contenido || [];
+  var plan = (data3||{}).plan_contenido || [];
+  var planHTML = plan.map(function(sem) {
+    var posts = (sem.posts||[]).map(function(p) { return '<tr><td>' + p.dia + '</td><td>' + p.formato + '</td><td>' + (p.tema||'') + '</td><td>' + (p.brief||'') + '</td></tr>'; }).join('');
+    return '<h4>Semana ' + sem.semana + '</h4><table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:12px"><tr style="background:#f5f0e8"><th>Día</th><th>Formato</th><th>Tema</th><th>Brief</th></tr>' + posts + '</table>';
+  }).join('');
+
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe Vitrina — ' + r.nombre + '</title>' +
+    '<style>body{font-family:Georgia,serif;max-width:800px;margin:0 auto;padding:40px;color:#1C1612}' +
+    'h1{font-size:28px;color:#B85A30}h2{font-size:20px;color:#1C1612;border-bottom:2px solid #B85A30;padding-bottom:8px;margin-top:32px}' +
+    'h3{font-size:16px;color:#5A7A5E}h4{color:#B85A30;margin-top:16px}' +
+    '.header{background:#1C1612;color:white;padding:32px;border-radius:8px;margin-bottom:32px}' +
+    '.header h1{color:#D4724E;margin:0 0 8px}' +
+    '.score{font-size:48px;font-weight:bold;color:#D4724E}' +
+    '.metric{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #EDE5D8}' +
+    '.good{color:#5A7A5E}.warn{color:#C8963C}.bad{color:#B83030}' +
+    'table{border-color:#DDD5C8}td,th{text-align:left;padding:6px}' +
+    '.footer{margin-top:40px;padding-top:20px;border-top:1px solid #EDE5D8;font-size:11px;color:#8A7E74;text-align:center}' +
+    '@media print{.no-print{display:none}}</style></head><body>' +
+    '<div class="header"><h1>Vitrina — Informe de Marketing Digital</h1>' +
+    '<div style="font-size:14px;color:rgba(255,255,255,.6)">' + r.nombre + ' · ' + r.barrio + ' · ' + fecha + '</div>' +
+    '<div style="margin-top:16px"><span class="score">' + ((data1||{}).puntaje_vitrina||'—') + '</span><span style="font-size:16px;color:rgba(255,255,255,.5)">/100 Puntaje Vitrina</span></div></div>' +
+    '<h2>1. Resumen Ejecutivo</h2><p>' + ((data1||{}).resumen_ejecutivo||'—') + '</p>' +
+    '<h2>2. Google Maps</h2>' +
+    '<div class="metric"><span>Calificación</span><span class="good">' + (gm.calificacion||'—') + '</span></div>' +
+    '<div class="metric"><span>Responde reseñas</span><span>' + (gm.responde_resenas||'—') + '</span></div>' +
+    '<div class="metric"><span>Horarios actualizados</span><span>' + (gm.horarios_actualizados||'—') + '</span></div>' +
+    '<div class="metric"><span>Fotos propias</span><span>' + (gm.fotos_propias||'—') + '</span></div>' +
+    '<div class="metric"><span>Menú cargado</span><span>' + (gm.menu_cargado||'—') + '</span></div>' +
+    '<h3>Acciones para mejorar Google Maps</h3>' + acciones +
+    '<h2>3. Fortalezas y Oportunidades</h2>' +
+    '<h3>Fortalezas</h3><ul>' + hallazgos1 + '</ul>' +
+    '<h3>Oportunidades</h3><ul>' + ops + '</ul>' +
+    '<h2>4. Instagram</h2>' +
+    '<div class="metric"><span>Seguidores</span><span>' + (ig.seguidores||'—') + '</span></div>' +
+    '<div class="metric"><span>Frecuencia</span><span>' + (ig.frecuencia||'—') + '</span></div>' +
+    '<div class="metric"><span>Engagement</span><span>' + (ig.engagement_estimado||'—') + '</span></div>' +
+    '<p>' + ((data2||{}).diagnostico_redes||'') + '</p>' +
+    '<h2>5. Estrategia a 90 días</h2>' +
+    '<p>' + ((data3||{}).diferenciacion||'') + '</p>' +
+    '<h3>Pilares de contenido</h3><ul>' + pilares.map(function(p) { return '<li>' + p + '</li>'; }).join('') + '</ul>' +
+    '<h2>6. Plan de Contenido — 30 días</h2>' + planHTML +
+    '<div class="footer">Informe generado por Vitrina · vitrina.app · ' + fecha + '<br>Confidencial — para uso exclusivo de ' + r.nombre + '</div>' +
+    '</body></html>'
+  );
+  win.document.close();
+  setTimeout(function() { win.print(); }, 500);
+}
+
+// ── STAGE NAV ──
+function setStagNav(etapa) {
+  for (var i = 1; i <= 3; i++) {
+    var el = document.getElementById('sn-' + i);
+    var cn = document.getElementById('sc-' + i);
+    if (i < etapa) {
+      el.className = 'sn-item done';
+      if (cn) cn.className = 'sn-connector done';
+    } else if (i === etapa) {
+      el.className = 'sn-item active';
+    } else {
+      el.className = 'sn-item pending';
+    }
+  }
+}
+
+// ── ERROR ──
+function mostrarError(msg) {
+  var msgLimpio = 'Hubo un error al procesar el análisis. Por favor intentá de nuevo.';
+  if (msg && msg.length < 100 && !msg.includes('{') && !msg.includes('await')) {
+    msgLimpio = msg;
+  }
+  mostrar('screen-results');
+  document.getElementById('results-content').innerHTML =
+    '<div class="error-card">' +
+    '<div class="error-icon">⚠️</div>' +
+    '<div class="error-title">Algo salió mal</div>' +
+    '<div class="error-msg">' + msgLimpio + '</div>' +
+    '<button class="btn-retry" onclick="reintentarAnalisis()">Reintentar</button>' +
+    '</div>';
+  document.getElementById('continue-wrap').innerHTML = '';
+}
+
+function reintentarAnalisis() {
+  if (retryFn) {
+    var etapaNum = retryFn === etapa1 ? 1 : retryFn === etapa2 ? 2 : 3;
+    mostrar('screen-loading');
+    configLoading(etapaNum);
+    setTimeout(retryFn, 300);
+  }
+}
+
+// ── NUEVO ANÁLISIS ──
+function nuevoAnalisis() {
+  data1 = null; data2 = null; data3 = null;
+  ['inp-nombre','inp-barrio','inp-tipo','inp-ticket','inp-ig','inp-tt'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  mostrar('screen-restaurant');
+}
+</script>
+</body>
+</html>
